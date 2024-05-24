@@ -1,0 +1,50 @@
+<template>
+  <div>
+    <!-- First div with a button to view more -->
+    <div class="first-div">
+      <button @click="scrollToEnd">View More</button>
+    </div>
+
+    <!-- Second div with added height for scrolling -->
+    <div class="second-div">
+      <!-- Add content here -->
+      <p>Some content...</p>
+      <p>Some more content...</p>
+      <!-- Repeat as necessary to fill the height -->
+    </div>
+  </div>
+</template>
+
+<script>
+  import { ref } from 'vue';
+
+  export default {
+    setup() {
+      // Function to scroll to the end of the page
+      const scrollToEnd = () => {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      };
+
+      return {
+        scrollToEnd
+      };
+    }
+  };
+</script>
+
+<style>
+  /* Style for first div */
+  .first-div {
+    margin-bottom: 20px;
+  }
+
+  /* Style for second div */
+  .second-div {
+    height: 1500px; /* Added height for scrolling */
+    background-color: #f0f0f0; /* Just for demonstration */
+    overflow-y: auto; /* Enable vertical scroll if content exceeds height */
+  }
+</style>
