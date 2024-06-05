@@ -116,8 +116,8 @@
                         <!-- Line charts for each priority -->
                         <div class="container">
                             <div class="row">
-                                <div class="col-md-4" v-for="(chart, index) in selectedOptions" :key="index">
-                                    <!-- <canvas :id="'barChart' + index" width="300" height="300"></canvas> -->
+                                <div class="col-md-6 chart-column" v-for="(chart, index) in selectedOptions" :key="index">
+                                    <canvas :id="'barChart' + index" width="600" height="300"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -135,7 +135,9 @@
 <script>
 import { ref, reactive, onMounted } from 'vue';
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
+Chart.register(ChartDataLabels);
 export default {
     name: 'ChartExample',
     setup() {
@@ -176,6 +178,7 @@ export default {
             if (dropdown === 'dropdown2') dropdown2.value = value;
             if (dropdown === 'dropdown3') dropdown3.value = value;
             validateDropdowns();
+            showChart();
         };
 
         const validateDropdowns = () => {
@@ -185,39 +188,53 @@ export default {
         };
 
         const showChart = () => {
-            const data = {
-                labels: ['Priority 1', 'Priority 2', 'Priority 3', 'Priority 4', 'Priority 5'],
-                datasets: [
-                    {
-                        label: 'Priority Distribution',
-                        data: [30, 20, 10, 25, 15],
-                        backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)', 'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)'],
-                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
-                        borderWidth: 1
-                    }
-                ]
-            };
+            const selectedOption = selectedOptions.value[selectedOptions.value.length - 1]; // Get the last selected dropdown value
+            const newData = chartData[selectedOption];
 
-            const config = {
+            let chart = barCharts.value.find((chart) => chart.canvas && chart.canvas.id === 'myChart');
+
+            // Destroy existing chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+
+            const ctx = document.getElementById('myChart');
+            if (!ctx) {
+                console.error('Canvas element not found');
+                return;
+            }
+
+            // Create new chart
+            chart = new Chart(ctx, {
                 type: 'pie',
-                data: data,
+                data: {
+                    labels: ['Priority 1', 'Priority 2', 'Priority 3', 'Priority 4', 'Priority 5'],
+                    datasets: [
+                        {
+                            label: 'Priority Distribution',
+                            data: newData,
+                            backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)', 'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)'],
+                            borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+                            borderWidth: 1
+                        }
+                    ]
+                },
                 options: {
-                    onClick: function (event, elements) {
-                        if (elements.length > 0) {
-                            const clickedElement = elements[0];
-                            const label = data.labels[clickedElement.index];
-                            const value = data.datasets[0].data[clickedElement.index];
-                            const color = data.datasets[0].backgroundColor[clickedElement.index];
-                            priorityDetails.label = label;
-                            priorityDetails.value = value;
-                            priorityDetails.color = color;
-                            priorityDetails.visible = true;
+                    // Add your chart options here
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Chart Title'
                         }
                     }
                 }
-            };
+            });
 
-            new Chart(document.getElementById('myChart'), config);
+            // Store the new chart in the barCharts array
+            barCharts.value.push(chart);
         };
 
         const showTrendsModal = () => {
@@ -278,6 +295,10 @@ export default {
                 }
             });
 
+            barCharts.value = [];
+            const container = document.querySelector('#trendModal .modal-body');
+            container.innerHTML = '';
+
             // Iterate over selected options
             selectedOptions.value.forEach((option, index) => {
                 const data = chartData[option];
@@ -287,7 +308,7 @@ export default {
 
                 const datasets = [];
                 for (let j = 0; j < 3; j++) {
-                    const barData = data.map((value) => Math.floor(Math.random() * 10)); // Replace with your actual data logic
+                    const barData = data.map(() => Math.floor(Math.random() * 10)); // Replace with your actual data logic
                     const backgroundColor = getRandomColor();
 
                     datasets.push({
@@ -304,13 +325,26 @@ export default {
                         datasets: datasets
                     },
                     options: {
-                        responsive: true,
+                        responsive: false,
+                        width: 800,
+                        height: 300,
+
                         scales: {
                             x: {
                                 grid: { display: false }
                             },
                             y: {
                                 grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                formatter: (value) => value,
+                                font: {
+                                    weight: 'bold'
+                                }
                             }
                         }
                     }
@@ -319,11 +353,15 @@ export default {
                 // Render the chart
                 const canvas = document.createElement('canvas');
                 canvas.id = `barChart${index}`;
-                document.querySelector('#trendModal .modal-body').appendChild(canvas);
+                canvas.width = 800;
+                canvas.height = 300;
+                canvas.style.marginBottom = '20px';
+                container.appendChild(canvas);
                 const chart = new Chart(canvas, config);
-                barCharts.value[index] = chart;
+                barCharts.value.push(chart);
             });
         };
+
         const getRandomColor = () => {
             const letters = '0123456789ABCDEF';
             let color = '#';
@@ -382,5 +420,15 @@ export default {
 canvas {
     max-width: 100%;
     height: auto;
+}
+.container {
+    max-width: 1000px;
+}
+.dropdown-toggle {
+    width: 100%;
+}
+.chart-column {
+    display: inline-block;
+    margin-right: 10px;
 }
 </style>
