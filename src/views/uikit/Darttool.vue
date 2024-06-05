@@ -52,7 +52,7 @@
                     <!-- Priority details and Pie chart side by side -->
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <div class="position-relative" id="chart-container">
+                            <div id="chartContainer" class="position-relative">
                                 <canvas id="myChart" width="300" height="300"></canvas>
                             </div>
                             <div id="trendsBtnContainer" class="mt-3 text-center">
@@ -204,7 +204,14 @@ export default {
                 return;
             }
 
-            // Create new chart
+            // Get the parent element of the canvas (the card)
+            const card = ctx.parentElement;
+
+            // Set the width and height of the canvas to match the card's dimensions
+            ctx.width = card.clientWidth;
+            ctx.height = card.clientHeight;
+
+            // Create new chart with updated size
             chart = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -220,7 +227,7 @@ export default {
                     ]
                 },
                 options: {
-                    // Add your chart options here
+                    responsive: false, // Disable responsiveness
                     plugins: {
                         legend: {
                             position: 'top'
@@ -228,6 +235,22 @@ export default {
                         title: {
                             display: true,
                             text: 'Chart Title'
+                        }
+                    },
+                    onClick: function (event, elements) {
+                        if (elements.length > 0) {
+                            const clickedElement = elements[0];
+                            const label = this.data.labels[clickedElement.index];
+                            const value = this.data.datasets[0].data[clickedElement.index];
+                            const color = this.data.datasets[0].backgroundColor[clickedElement.index];
+                            priorityDetails.label = label;
+                            priorityDetails.value = value;
+                            priorityDetails.color = color;
+                            priorityDetails.visible = true;
+                            modalContent.value = priorityData[label].map((item) => ({
+                                label: label,
+                                source: item
+                            }));
                         }
                     }
                 }
